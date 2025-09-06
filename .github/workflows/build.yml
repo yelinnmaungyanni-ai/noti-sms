@@ -19,12 +19,15 @@ jobs:
         distribution: temurin
         java-version: 17
 
+    # Install Android commandline tools + set ANDROID_SDK_ROOT
     - name: Set up Android SDK
       uses: android-actions/setup-android@v3
-      with:
-        api-level: 35
-        build-tools: 35.0.0
-        ndk: false
+
+    # Accept licenses + install required SDK packages
+    - name: Install Android packages
+      run: |
+        yes | sdkmanager --licenses
+        sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
     - name: Cache Gradle
       uses: actions/cache@v4
@@ -49,5 +52,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: NotiSms-debug
-        path: app/build/outputs/**/*.apk
+        # grab any APK produced under outputs (module name is "app")
+        path: |
+          app/build/outputs/**/*.apk
         if-no-files-found: error
