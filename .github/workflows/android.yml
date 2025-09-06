@@ -1,9 +1,9 @@
 name: Build NotiSms APK (no Android Studio)
 
 on:
-  workflow_dispatch:       # Actions tab မှာ Run ခလုပ်
+  workflow_dispatch:
   push:
-    branches: [ "main" ]   # main ကို push လုပ်ရင် auto build (မလိုရင် ဖျက်ရ)
+    branches: [ "main" ]
 
 jobs:
   build:
@@ -19,22 +19,36 @@ jobs:
         distribution: temurin
         java-version: 17
 
-    # ❗ Android SDK + Build-Tools သွင်းပေးမယ့် step (အရေးကြီး)
     - name: Set up Android SDK
       uses: android-actions/setup-android@v3
+
+    - name: Install Android packages
+      run: |
+        yes | sdkmanager --licenses
+        sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+    - name: Cache Gradle
+      uses: actions/cache@v4
       with:
-        api-level: 35
-        build-tools: 35.0.0
-        ndk: false
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Build with Gradle
-      run: ./gradlew clean :app:assembleDebug
+    - name: Build Debug APK
+      run: ./gradlew clean :app:assembleDebug --stacktrace
+
+    - name: Show outputs tree (debugging)
+      run: ls -R app/build/outputs || true
 
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
       with:
         name: NotiSms-debug
-        path: app/build/outputs/apk/debug/*.apk
+        path: app/build/outputs/**/*.apk
+        if-no-files-found: error
