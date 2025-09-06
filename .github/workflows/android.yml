@@ -1,0 +1,40 @@
+name: Build NotiSms APK (no Android Studio)
+
+on:
+  workflow_dispatch:       # Actions tab မှာ Run ခလုပ်
+  push:
+    branches: [ "main" ]   # main ကို push လုပ်ရင် auto build (မလိုရင် ဖျက်ရ)
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: 17
+
+    # ❗ Android SDK + Build-Tools သွင်းပေးမယ့် step (အရေးကြီး)
+    - name: Set up Android SDK
+      uses: android-actions/setup-android@v3
+      with:
+        api-level: 35
+        build-tools: 35.0.0
+        ndk: false
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Build with Gradle
+      run: ./gradlew clean :app:assembleDebug
+
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: NotiSms-debug
+        path: app/build/outputs/apk/debug/*.apk
